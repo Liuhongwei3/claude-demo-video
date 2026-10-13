@@ -312,7 +312,7 @@ SHOTS = [
 SFX = [
     (0.00, "whoosh_soft"), (6.18, "tick"), (6.75, "whoosh_soft"), (7.60, "chime_soft"),
     (14.47, "tick"), (18.00, "whoosh_soft"), (20.32, "tick"), (22.97, "tick"), (23.40, "chime"),
-    (24.95, "whoosh_soft"), (26.05, "tick"), (32.85, "whoosh_soft"), (34.20, "tick"),
+    (26.05, "tick"), (32.85, "whoosh_soft"), (34.20, "tick"),
     (40.62, "tick"), (42.70, "tick"), (43.60, "whoosh_soft"),
     (45.50, "riser_end"), (46.30, "chime_end"),
 ]
