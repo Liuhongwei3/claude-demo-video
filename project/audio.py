@@ -28,7 +28,7 @@ BEAT = 60 / BPM
 BAR = 4 * BEAT  # 2.4 s
 
 # Bar on which the progression resolves to Cmaj9 under the closing line (v1: bar 11 = 26.4 s).
-MUSIC = dict(resolve_bar=11, kick_bar=2, shaker_bar=4)
+MUSIC = dict(resolve_bar=11, kick_bar=2, shaker_bar=4, music_lufs=-27.0, duck_lookahead=0.0, duck_depth=0.65)
 MUSIC.update(getattr(edl, "MUSIC", {}))
 R = MUSIC["resolve_bar"]
 T_LIFT = (R - 0.5) * BAR
@@ -288,10 +288,14 @@ def main():
     sfx = make_sfx()
     vo = make_vo()
     env = envelope(vo)
-    duck = 1 - 0.65 * np.clip(env / 0.25, 0, 1)
+    look = int(MUSIC["duck_lookahead"] * SR)
+    if look:
+        # start ducking just before each line so soft initials (r-, sh-) are not masked
+        env = np.maximum(env, np.concatenate([env[look:], np.zeros(look)]))
+    duck = 1 - MUSIC["duck_depth"] * np.clip(env / 0.25, 0, 1)
     music_d = music * duck[:, None]
     meter = pyloudnorm.Meter(SR)
-    music_d *= 10 ** ((-27.0 - meter.integrated_loudness(music_d)) / 20)
+    music_d *= 10 ** ((MUSIC["music_lufs"] - meter.integrated_loudness(music_d)) / 20)
     vo_st = np.stack([vo, vo], 1)
     vo_st *= 10 ** ((-17.0 - meter.integrated_loudness(vo_st)) / 20)
     sfx *= 10 ** ((-31.0 - meter.integrated_loudness(sfx)) / 20)

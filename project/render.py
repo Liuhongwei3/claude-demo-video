@@ -329,8 +329,14 @@ class ShotRenderer:
                 rect = r
         return rect
 
-    def view(self, t):
+    def geom(self, t):
         cam = interp_cam(self.shot["cam"], t)
+        return dict(w=cam["w"], h=cam["h"], ccy=cam["ccy"])
+
+    def view(self, t, geom=None, zoom=1.0):
+        cam = interp_cam(self.shot["cam"], t)
+        if geom:
+            cam.update(geom)
         scale = 1.0
         alpha = 1.0
         enter = self.shot.get("enter")
@@ -338,7 +344,7 @@ class ShotRenderer:
             p = ease_out((t - self.shot["t0"]) / enter)
             scale, alpha = 0.92 + 0.08 * p, ease((t - self.shot["t0"]) / (enter * 0.8))
         w, h = cam["w"] * scale, cam["h"] * scale
-        s = cam["s"] * scale
+        s = cam["s"] * scale * zoom
         cw, ch = w / s, h / s
         sx0, sy0, sx1, sy1 = self.safe(t)
         cx = clamp(cam["cx"], sx0 + cw / 2, sx1 - cw / 2) if cw < sx1 - sx0 else (sx0 + sx1) / 2
@@ -461,8 +467,8 @@ class ShotRenderer:
             if d > 0:
                 content[:] = (content.astype(np.float32) * (1 - d) + np.array(NAVY, np.float32) * d).astype(np.uint8)
 
-    def render(self, t, canvas):
-        v = self.view(t)
+    def render(self, t, canvas, geom=None, zoom=1.0):
+        v = self.view(t, geom, zoom)
         content = self.render_content(t, v)
         self.draw_fx(content, t, v)
         w, h = v["w"], v["h"]
@@ -537,7 +543,7 @@ def load_vo():
         if i + 1 < len(script.VO_LINES):
             end = min(end, script.VO_LINES[i + 1]["start"] - 0.08)
         end = min(end, script.SUBTITLE_HIDE_AFTER.get(i, 1e9), edl.DURATION)
-        rows = script.SUBTITLE_BREAKS.get(i) or [line["text"].rstrip("。")]
+        rows = script.SUBTITLE_BREAKS.get(i) or [line["text"].rstrip("。，")]
         out.append(dict(start=start, end=end, rows=rows, text=line["text"]))
     return out
 
@@ -639,9 +645,32 @@ def active_shots(t):
     return out
 
 
+def render_morph(t, renderers, bg, a, b):
+    """Overlap of two shots as one card: its frame glides from shot a's geometry to shot b's while
+    the content cross-dissolves, with an optional slight push-through zoom."""
+    sb = edl.SHOTS[b]
+    p = ease((t - sb["t0"]) / max(sb.get("xfade", 0), 1e-6))
+    ga, gb = renderers[a].geom(t), renderers[b].geom(t)
+    g = {k: ga[k] + (gb[k] - ga[k]) * p for k in ga}
+    xz = sb.get("xzoom", L.get("xzoom", 0.0))
+    out = bg.copy()
+    renderers[a].render(t, out, g, 1 + xz * p)
+    if p <= 0:
+        return out
+    inc = bg.copy()
+    renderers[b].render(t, inc, g, 1 + xz * (1 - p))
+    return cv2.addWeighted(out, 1 - p, inc, p, 0) if p < 1 else inc
+
+
 def render_frame(t, renderers, bg, vo):
     idx = active_shots(t)
     layers = []
+    if L.get("morph") and len(idx) >= 2 and t < edl.SHOTS[idx[-1]]["t0"] + edl.SHOTS[idx[-1]].get("xfade", 0):
+        frame = render_morph(t, renderers, bg, idx[-2], idx[-1])
+        draw_headlines(frame, t)
+        draw_subtitles(frame, t, vo)
+        draw_closing(frame, t)
+        return outro(frame, t)
     for i in idx:
         sh = edl.SHOTS[i]
         canvas = bg.copy()
@@ -658,6 +687,15 @@ def render_frame(t, renderers, bg, vo):
     draw_headlines(frame, t)
     draw_subtitles(frame, t, vo)
     draw_closing(frame, t)
+    return outro(frame, t)
+
+
+def outro(frame, t):
+    fo = L.get("outro_fade", 0)
+    left = edl.DURATION - 1 / FPS - t
+    if fo and left < fo:
+        k = ease(max(left, 0) / fo)
+        frame = (frame.astype(np.float32) * k).astype(np.uint8)
     return frame
 
 

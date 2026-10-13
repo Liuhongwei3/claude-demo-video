@@ -56,14 +56,16 @@ def main():
     info = []
     for i, line in enumerate(VO_LINES):
         audio = tts.generate(line.get("say", line["text"]), sid=line.get("sid", VOICE_SID), speed=line.get("speed", 1.1))
-        x = trim(np.asarray(audio.samples, dtype=np.float32), audio.sample_rate)
+        x = trim(np.asarray(audio.samples, dtype=np.float32), audio.sample_rate,
+                 pad=getattr(script, "TRIM_PAD", 0.03))
         x = x / (np.abs(x).max() + 1e-9) * 0.89
         path = OUT / f"line_{i:02d}.wav"
         sf.write(path, x, audio.sample_rate)
         heard = ""
         if asr:
             st = asr.create_stream()
-            st.accept_waveform(audio.sample_rate, x)
+            pad = np.zeros(int(0.3 * audio.sample_rate), np.float32)
+            st.accept_waveform(audio.sample_rate, np.concatenate([pad, x, pad]))
             asr.decode_stream(st)
             heard = st.result.text
         dur = len(x) / audio.sample_rate

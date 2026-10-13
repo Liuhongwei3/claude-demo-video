@@ -9,7 +9,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 VERSIONS = ROOT / "project/versions"
-LATEST = sorted(p.name for p in VERSIONS.iterdir() if p.is_dir() and p.name.startswith("v"))[-1]
+LATEST = max((p.name for p in VERSIONS.iterdir() if p.is_dir() and p.name[1:].isdigit()),
+             key=lambda n: int(n[1:]))
 VERSION = os.environ.get("VIDEO_VERSION", LATEST)
 
 BUILD = ROOT / "build" / VERSION

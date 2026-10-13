@@ -29,7 +29,7 @@ def main():
             end = min(end, script.VO_LINES[i + 1]["start"] - 0.08)
         end = min(end, edl.DURATION)
         rows = script.SUBTITLE_BREAKS.get(i) or [line["text"]]
-        text = "\n".join(r.rstrip("。") for r in rows)
+        text = "\n".join(r.rstrip("。，") for r in rows)
         blocks.append(f"{i + 1}\n{ts(start)} --> {ts(end)}\n{text}\n")
     (OUT / "subtitles.srt").write_text("\n".join(blocks), encoding="utf-8")
 
