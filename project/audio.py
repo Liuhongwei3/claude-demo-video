@@ -1,7 +1,7 @@
 """Soundtrack: procedurally synthesised BGM + UI sound cues + voice-over, ducked and loudness-normalised.
 
 Everything here is generated from code (no third-party audio), so there are no licensing questions.
-Outputs build/audio/{music,sfx,vo,mix}.wav  (48 kHz stereo).
+Outputs build/<version>/audio/{music,sfx,vo,mix}.wav  (48 kHz stereo).
 """
 import json
 import sys
@@ -14,18 +14,25 @@ from scipy.signal import butter, fftconvolve, resample_poly, sosfilt
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "project"))
-import edl  # noqa: E402
-import script  # noqa: E402
+from config import BUILD, edl, script  # noqa: E402
 
 SR = 48000
 DUR = edl.DURATION + 0.4
 N = int(DUR * SR)
-OUT = ROOT / "build/audio"
+OUT = BUILD / "audio"
+VO_DIR = BUILD / "vo"
 rng = np.random.default_rng(7)
 
 BPM = 100
 BEAT = 60 / BPM
 BAR = 4 * BEAT  # 2.4 s
+
+# Bar on which the progression resolves to Cmaj9 under the closing line (v1: bar 11 = 26.4 s).
+MUSIC = dict(resolve_bar=11, kick_bar=2, shaker_bar=4)
+MUSIC.update(getattr(edl, "MUSIC", {}))
+R = MUSIC["resolve_bar"]
+T_LIFT = (R - 0.5) * BAR
+T_RESOLVE = R * BAR
 
 
 def midi(n):
@@ -86,10 +93,10 @@ LOOP = [
     [52, 55, 59, 62],    # Em7
     [57, 60, 64, 67],    # Am7
 ]
-PROG = [(float(bar), LOOP[bar % 4]) for bar in range(10)] + [
-    (10.0, [53, 57, 60, 64]),       # Fmaj7 (24.0 s)
-    (10.5, [55, 59, 62, 65]),       # G7    (25.2 s) - lift
-    (11.0, [48, 55, 59, 62, 64]),   # Cmaj9 (26.4 s) - resolve, held to the end
+PROG = [(float(bar), LOOP[bar % 4]) for bar in range(R - 1)] + [
+    (R - 1.0, [53, 57, 60, 64]),    # Fmaj7
+    (R - 0.5, [55, 59, 62, 65]),    # G7    - lift
+    (float(R), [48, 55, 59, 62, 64]),   # Cmaj9 - resolve, held to the end
 ]
 BASS_ROOT = {53: 41, 55: 43, 52: 40, 57: 45, 48: 36}
 
@@ -128,18 +135,18 @@ def make_music():
         if t0 >= BAR * 1 - 0.01:
             beats = np.arange(t0, t1 - 0.01, BEAT * 2)
             for b in beats:
-                if 25.2 <= b < 26.4:
+                if T_LIFT <= b < T_RESOLVE:
                     continue
                 m = int(BEAT * 1.9 * SR)
                 tt = np.arange(m) / SR
                 s = np.sin(2 * np.pi * midi(root) * tt) + 0.25 * np.sin(4 * np.pi * midi(root) * tt)
                 add(bass, s * env_adsr(m, 0.02, 0.3, 0.6, 0.4), b, 0.30)
         # arpeggio: 8th notes through chord tones, one octave up
-        if t0 >= 1.2 and not (25.2 <= t0 < 26.4):
+        if t0 >= 1.2 and not (T_LIFT <= t0 < T_RESOLVE):
             seq = [notes[0] + 12, notes[1] + 12, notes[2] + 12, notes[3] + 12, notes[2] + 12, notes[1] + 12]
             step = BEAT / 2
             k = 0
-            for tt0 in np.arange(max(t0, 1.2), min(t1, 25.2 if t0 < 25.2 else t1) - 0.01, step):
+            for tt0 in np.arange(max(t0, 1.2), min(t1, T_LIFT if t0 < T_LIFT else t1) - 0.01, step):
                 f = midi(seq[k % len(seq)])
                 m = int(0.5 * SR)
                 tt = np.arange(m) / SR
@@ -148,19 +155,19 @@ def make_music():
                 add(pluck_l, s, tt0, 0.055 * vel * (1.0 if k % 2 == 0 else 0.6))
                 add(pluck_r, s, tt0, 0.055 * vel * (0.6 if k % 2 == 0 else 1.0))
                 k += 1
-    # soft kick on every beat 4.8 s -> 25.2 s, light shaker on off-beats 9.6 s -> 25.2 s
-    for b in np.arange(4.8, 25.2 - 0.01, BEAT):
+    # soft kick on every beat, light shaker on off-beats, both stopping for the lift
+    for b in np.arange(MUSIC["kick_bar"] * BAR, T_LIFT - 0.01, BEAT):
         m = int(0.32 * SR)
         tt = np.arange(m) / SR
         f = 45 + 75 * np.exp(-tt * 28)
         k = np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-tt * 11)
         add(drums, k, b, 0.20)
-    for b in np.arange(9.6 + BEAT / 2, 25.2 - 0.01, BEAT):
+    for b in np.arange(MUSIC["shaker_bar"] * BAR + BEAT / 2, T_LIFT - 0.01, BEAT):
         m = int(0.08 * SR)
         nz = highpass(rng.standard_normal(m), 6000) * np.exp(-np.arange(m) / SR * 50)
         add(drums, nz, b, 0.025)
     # riser into the resolve + soft impact
-    r0, r1 = 24.4, 26.4
+    r0, r1 = T_RESOLVE - 2.0, T_RESOLVE
     m = int((r1 - r0) * SR)
     tt = np.linspace(0, 1, m)
     nz = rng.standard_normal(m)
@@ -169,7 +176,7 @@ def make_music():
     m = int(1.6 * SR)
     tt = np.arange(m) / SR
     boom = np.sin(2 * np.pi * (40 + 40 * np.exp(-tt * 9)) * tt) * np.exp(-tt * 3.0)
-    add(drums, boom, 26.4, 0.22)
+    add(drums, boom, T_RESOLVE, 0.22)
 
     pluck = np.stack([pluck_l, pluck_r], 1)
     # simple stereo delay on the plucks
@@ -242,10 +249,10 @@ def make_sfx():
 
 # ----------------------------------------------------------------------------- voice-over
 def make_vo():
-    info = json.loads((ROOT / "build/vo/durations.json").read_text())
+    info = json.loads((VO_DIR / "durations.json").read_text())
     buf = np.zeros(N)
     for line, meta in zip(script.VO_LINES, info):
-        x, sr = sf.read(ROOT / "build/vo" / meta["file"])
+        x, sr = sf.read(VO_DIR / meta["file"])
         if x.ndim > 1:
             x = x.mean(1)
         x = resample_poly(x, SR, sr)

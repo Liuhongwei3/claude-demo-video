@@ -1,7 +1,8 @@
 """Programmatic renderer: source screen recording + EDL -> 1080x1920 promo video (no audio).
 
-    python3 project/render.py                      # full render -> build/video.mp4
-    python3 project/render.py --stills 3.5 7.9     # PNG previews -> build/stills/
+    python3 project/render.py                      # full render -> build/<version>/video.mp4
+    python3 project/render.py --stills 3.5 7.9     # PNG previews -> build/<version>/stills/
+    VIDEO_VERSION=v1 python3 project/render.py     # re-render an earlier version
 """
 import argparse
 import json
@@ -18,11 +19,10 @@ from PIL import Image, ImageDraw, ImageFont
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "project"))
-import edl  # noqa: E402
-import script  # noqa: E402
+from config import BUILD, LAYOUT, edl, script  # noqa: E402
 
 SOURCE = ROOT / "source/source.mp4"
-BUILD = ROOT / "build"
+L = LAYOUT
 W, H, FPS = edl.OUT_W, edl.OUT_H, edl.FPS
 REF_W, REF_H = 1280, 720
 
@@ -35,10 +35,7 @@ BLUE_LIGHT = (255, 190, 110)
 NAVY = (40, 26, 14)            # deep background
 UI_BG = (247, 246, 245)
 CARD_X_CENTER = W // 2
-CARD_RADIUS = 26
-HEAD_KICKER_Y = 188
-HEAD_TITLE_Y = 246
-SUB_TOP = 1556
+CARD_RADIUS = L["card_radius"]
 
 
 # ----------------------------------------------------------------------------- helpers
@@ -89,8 +86,8 @@ def interp_cam(keys, t):
                     val = v0 + (v1 - v0) * u
                 break
         params[k] = val
-    params.setdefault("w", 960)
-    params.setdefault("ccy", 960)
+    params.setdefault("w", L["card_w"])
+    params.setdefault("ccy", L["card_cy"])
     return params
 
 
@@ -380,11 +377,11 @@ class ShotRenderer:
         """Yield (rect_ref, alpha, fx) for highlight-like effects at time t."""
         for e in self.shot["fx"]:
             if e["kind"] == "hl":
-                a = fade_window(t, e["t_in"], e["t_out"])
+                a = fade_window(t, e["t_in"], e["t_out"], L["hl_fade_in"], L["hl_fade_out"])
                 if a > 0:
                     yield e["rect"], a, e, ease_out((t - e["t_in"]) / 0.35)
             elif e["kind"] == "sweep":
-                a = fade_window(t, e["t_in"], e["t_out"])
+                a = fade_window(t, e["t_in"], e["t_out"], L["hl_fade_in"], L["hl_fade_out"])
                 if a > 0:
                     path = e["path"]
                     rect = path[0][1]
@@ -547,50 +544,54 @@ def load_vo():
 
 def draw_headlines(canvas, t):
     heads = script.HEADLINES
+    fin, fout = L["head_fade_in"], L["head_fade_out"]
     for i, (t_in, t_out, kicker, title) in enumerate(heads):
         if not (t_in - 0.01 <= t <= t_out):
             continue
-        a_in = ease((t - t_in) / 0.45)
-        a_out = ease((t_out - t) / 0.28) if t_out - t < 0.28 else 1.0
-        dy = int(26 * (1 - ease_out((t - t_in) / 0.5)))
+        a_in = ease((t - t_in) / fin)
+        a_out = ease((t_out - t) / fout) if t_out - t < fout else 1.0
+        dy = int(26 * (1 - ease_out((t - t_in) / (fin + 0.05))))
         prev_same = i > 0 and heads[i - 1][2] == kicker and abs(heads[i - 1][1] - t_in) < 0.02
         next_same = i + 1 < len(heads) and heads[i + 1][2] == kicker and abs(heads[i + 1][0] - t_out) < 0.02
         ka = min(1.0 if prev_same else a_in, 1.0 if next_same else a_out)
-        kp = pill_rgba(kicker, 28, fg=(214, 234, 255), bg=(30, 136, 243), bg_alpha=0.18,
+        kp = pill_rgba(kicker, L["kicker_size"], fg=(214, 234, 255), bg=(30, 136, 243), bg_alpha=0.18,
                        border=(30, 136, 243), padx=20, pady=9)
-        blend_rgba(canvas, kp, (W - kp.shape[1]) // 2, HEAD_KICKER_Y + (0 if prev_same else dy), ka)
-        tt = text_rgba(title, 72 if i == 0 else 64, (255, 255, 255), True, 2, 4)
-        blend_rgba(canvas, tt, (W - tt.shape[1]) // 2, HEAD_TITLE_Y + dy, min(a_in, a_out))
+        blend_rgba(canvas, kp, (W - kp.shape[1]) // 2, L["kicker_y"] + (0 if prev_same else dy), ka)
+        size = L["hook_title_size"] if i == 0 else L["title_size"]
+        tt = text_rgba(title, size, (255, 255, 255), True, 2, 4)
+        blend_rgba(canvas, tt, (W - tt.shape[1]) // 2, L["title_y"] + dy, min(a_in, a_out))
 
 
 def draw_subtitles(canvas, t, vo):
+    fd = L["sub_fade"]
     for sub in vo:
         if not (sub["start"] - 0.05 <= t <= sub["end"]):
             continue
-        a = min(ease((t - sub["start"] + 0.05) / 0.18), ease((sub["end"] - t) / 0.18))
-        rows = [text_rgba(r, 44, (255, 255, 255), True, 1, 2) for r in sub["rows"]]
-        lh = 62
+        a = min(ease((t - sub["start"] + 0.05) / fd), ease((sub["end"] - t) / fd))
+        rows = [text_rgba(r, L["sub_size"], (255, 255, 255), True, 1, 2) for r in sub["rows"]]
+        lh = L["sub_line_h"]
         bw = max(r.shape[1] for r in rows) + 56
         bh = lh * len(rows) + 30
         box = np.zeros((bh, bw, 4), np.uint8)
         box[..., :3] = (24, 14, 8)
         box[..., 3] = (round_rect_mask(bw, bh, 22) * 150).astype(np.uint8)
-        bx, by = (W - bw) // 2, SUB_TOP
+        bx, by = (W - bw) // 2, L["sub_top"]
         blend_rgba(canvas, box, bx, by, a)
         for i, r in enumerate(rows):
             blend_rgba(canvas, r, (W - r.shape[1]) // 2, by + 12 + i * lh, a)
 
 
 def draw_closing(canvas, t):
-    if t < 25.3:
+    t0 = L.get("closing_t", 25.45)
+    if t < t0 - 0.15:
         return
     labels = script.CLOSING_CHAIN
     pw, ph, gap = 120, 66, 36
     total = len(labels) * pw + (len(labels) - 1) * gap
     x = (W - total) // 2
-    y = 1000
+    y = L["closing_chain_y"]
     for i, lab in enumerate(labels):
-        t_i = 25.45 + i * 0.16
+        t_i = t0 + i * L.get("closing_step", 0.16)
         p = ease_out((t - t_i) / 0.4)
         if p <= 0:
             x += pw + gap
@@ -611,19 +612,22 @@ def draw_closing(canvas, t):
         pr = cv2.resize(pill, None, fx=sc, fy=sc, interpolation=cv2.INTER_AREA)
         blend_rgba(canvas, pr, int(x + (pw - pr.shape[1]) / 2), int(y + (ph - pr.shape[0]) / 2), p)
         x += pw + gap
-    a1 = ease((t - 26.15) / 0.5)
+    t1, t2 = t0 + L.get("closing_l1_delay", 0.70), t0 + L.get("closing_l2_delay", 1.10)
+    a1 = ease((t - t1) / 0.5)
     if a1 > 0:
         l1 = text_rgba(script.CLOSING_LINE_1, 50, (214, 228, 245), False, 2, 2)
-        blend_rgba(canvas, l1, (W - l1.shape[1]) // 2, 1150 + int(18 * (1 - ease_out((t - 26.15) / 0.6))), a1)
-    a2 = ease((t - 26.55) / 0.55)
+        blend_rgba(canvas, l1, (W - l1.shape[1]) // 2,
+                   L["closing_l1_y"] + int(18 * (1 - ease_out((t - t1) / 0.6))), a1)
+    a2 = ease((t - t2) / 0.55)
     if a2 > 0:
         l2 = text_rgba(script.CLOSING_LINE_2, 68, bold=True, spacing=3, shadow=3,
                        gradient=((255, 220, 140), (255, 160, 60)))
-        blend_rgba(canvas, l2, (W - l2.shape[1]) // 2, 1236 + int(18 * (1 - ease_out((t - 26.55) / 0.6))), a2)
-        bar_w = int(140 * ease_out((t - 26.8) / 0.6))
+        y2 = L["closing_l2_y"] + int(18 * (1 - ease_out((t - t2) / 0.6)))
+        blend_rgba(canvas, l2, (W - l2.shape[1]) // 2, y2, a2)
+        bar_w = int(140 * ease_out((t - t2 - 0.25) / 0.6))
         if bar_w > 2:
             bar = round_rect_mask(bar_w, 6, 3)
-            _blend_mask_at(canvas, bar, (W - bar_w) // 2, 1352, BLUE, 0.95)
+            _blend_mask_at(canvas, bar, (W - bar_w) // 2, L["closing_l2_y"] + 116, BLUE, 0.95)
 
 
 # ----------------------------------------------------------------------------- main loop
@@ -668,7 +672,7 @@ def main():
     args = ap.parse_args()
 
     SOURCE = Path(args.source)
-    BUILD.mkdir(exist_ok=True)
+    BUILD.mkdir(parents=True, exist_ok=True)
     src_info = probe(SOURCE)
     print("source", src_info)
     bg = make_background()

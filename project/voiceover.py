@@ -1,7 +1,7 @@
 """Generate the Mandarin voice-over offline with Kokoro v1.1-zh (Apache-2.0) via sherpa-onnx.
 
-Each line is synthesised separately, trimmed, and written to build/vo/line_XX.wav;
-measured durations go to build/vo/durations.json so the edit can be timed to speech.
+Each line is synthesised separately, trimmed, and written to build/<version>/vo/line_XX.wav;
+measured durations go to build/<version>/vo/durations.json so the edit can be timed to speech.
 """
 import json
 import sys
@@ -13,11 +13,13 @@ import sherpa_onnx
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "project"))
-from script import VO_LINES, VOICE_SID  # noqa: E402
+from config import BUILD, script  # noqa: E402
+
+VO_LINES, VOICE_SID = script.VO_LINES, script.VOICE_SID
 
 MODEL = ROOT / ".cache/tts/kokoro-multi-lang-v1_1"
 ASR = ROOT / ".cache/tts/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17"
-OUT = ROOT / "build/vo"
+OUT = BUILD / "vo"
 
 
 def make_tts():
@@ -53,7 +55,7 @@ def main():
             language="zh", use_itn=False, num_threads=4)
     info = []
     for i, line in enumerate(VO_LINES):
-        audio = tts.generate(line["text"], sid=VOICE_SID, speed=line.get("speed", 1.1))
+        audio = tts.generate(line.get("say", line["text"]), sid=line.get("sid", VOICE_SID), speed=line.get("speed", 1.1))
         x = trim(np.asarray(audio.samples, dtype=np.float32), audio.sample_rate)
         x = x / (np.abs(x).max() + 1e-9) * 0.89
         path = OUT / f"line_{i:02d}.wav"

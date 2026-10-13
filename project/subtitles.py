@@ -1,14 +1,13 @@
-"""Write deliverables/subtitles.srt and deliverables/voiceover-script.txt from the copy deck."""
+"""Write deliverables/<version>/subtitles.srt and voiceover-script.txt from the copy deck."""
 import json
 import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "project"))
-import edl  # noqa: E402
-import script  # noqa: E402
+from config import BUILD, DELIVER, edl, script  # noqa: E402
 
-OUT = ROOT / "deliverables"
+OUT = DELIVER
 
 
 def ts(t):
@@ -20,8 +19,8 @@ def ts(t):
 
 
 def main():
-    OUT.mkdir(exist_ok=True)
-    info = json.loads((ROOT / "build/vo/durations.json").read_text())
+    OUT.mkdir(parents=True, exist_ok=True)
+    info = json.loads((BUILD / "vo/durations.json").read_text())
     blocks = []
     for i, (line, meta) in enumerate(zip(script.VO_LINES, info)):
         start = line["start"]
@@ -34,13 +33,15 @@ def main():
         blocks.append(f"{i + 1}\n{ts(start)} --> {ts(end)}\n{text}\n")
     (OUT / "subtitles.srt").write_text("\n".join(blocks), encoding="utf-8")
 
-    shots = ["开场钩子", "工单详情与工序链路", "工序动态调整", "个人工作台与任务报工",
-             "负责人任务管理与批量派发", "价值收束"]
+    shots = getattr(script, "VO_SECTIONS", None) or [
+        f"镜头{i + 1} · {name}" for i, name in enumerate([
+            "开场钩子", "工单详情与工序链路", "工序动态调整", "个人工作台与任务报工",
+            "负责人任务管理与批量派发", "价值收束"])]
     lines = ["《生产工单全流程管理》产品宣传短视频 · 旁白文案",
-             f"总时长 {edl.DURATION:.1f} 秒 | 普通话男声，沉稳专业 | 语速约 4.5 字/秒", ""]
+             f"总时长 {edl.DURATION:.1f} 秒 | {getattr(script, 'VOICE_DESC', '普通话男声，沉稳专业 | 语速约 4.5 字/秒')}", ""]
     for i, (line, meta, name) in enumerate(zip(script.VO_LINES, info, shots)):
         st = line["start"]
-        lines.append(f"[{st:05.2f}s – {st + meta['duration']:05.2f}s] 镜头{i + 1} · {name}")
+        lines.append(f"[{st:05.2f}s – {st + meta['duration']:05.2f}s] {name}")
         lines.append(f"    {line['text']}")
         lines.append("")
     lines += ["画面主标题（屏幕大字）："]
