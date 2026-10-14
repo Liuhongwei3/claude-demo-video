@@ -1,4 +1,4 @@
-"""Building blocks for version EDLs (project/versions/<v>/edl.py): `from edlkit import *`.
+"""Building blocks for version EDLs (project/versions/<v>/edl.py): `from edlkit import kf, hl, ...`.
 
 Coordinates are in the reference space of the recording (1280 px wide, height follows its aspect ratio);
 `src` values are source seconds; every other time is seconds in the final cut.

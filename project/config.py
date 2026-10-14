@@ -9,7 +9,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(ROOT / "project"))  # lets version files `from edlkit import *`
+sys.path.insert(0, str(ROOT / "project"))  # lets version files import edlkit
 VERSIONS = ROOT / "project/versions"
 LATEST = max((p.name for p in VERSIONS.iterdir() if p.is_dir() and p.name[1:].isdigit()),
              key=lambda n: int(n[1:]), default="v1")

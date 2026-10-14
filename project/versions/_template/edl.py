@@ -7,7 +7,7 @@ Measure rects with tools/frame.py, find click / load times with tools/activity.p
 Workflow: write the copy deck (script.py) first, run voiceover.py, then lay shots on the voice-over
 timing -- each shot starts ~0.3-0.5 s before the line that talks about it.
 """
-from edlkit import *  # noqa: F401,F403  kf, hl, sweep, ripple, blur, sweep_path, LAYOUT_V2, MUSIC_V2, CARD_H
+from edlkit import CARD_H, LAYOUT_V2, MUSIC_V2, blur, hl, kf, ripple, sweep, sweep_path  # noqa: F401
 
 SOURCE = "source/source.mp4"  # TODO: tools/ingest.py output
 FPS = 30
