@@ -5,12 +5,14 @@
 """
 import importlib.util
 import os
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT / "project"))  # lets version files `from edlkit import *`
 VERSIONS = ROOT / "project/versions"
 LATEST = max((p.name for p in VERSIONS.iterdir() if p.is_dir() and p.name[1:].isdigit()),
-             key=lambda n: int(n[1:]))
+             key=lambda n: int(n[1:]), default="v1")
 VERSION = os.environ.get("VIDEO_VERSION", LATEST)
 
 BUILD = ROOT / "build" / VERSION
@@ -30,6 +32,7 @@ script = _load("script")
 
 SOURCE = ROOT / getattr(edl, "SOURCE", "source/source.mp4")
 TITLE = getattr(script, "TITLE", "生产工单全流程管理")
+OUT_NAME = getattr(script, "OUT_NAME", "production-workflow-demo")  # deliverables/<version>/<OUT_NAME>.mp4
 
 # Layout defaults reproduce v1; a version can override any key via edl.LAYOUT.
 LAYOUT = dict(

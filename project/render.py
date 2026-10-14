@@ -307,7 +307,8 @@ class ShotRenderer:
         ts = self.src_time(t)
         f = self.reader.get(ts)
         f = f.copy()
-        blurs = [dict(rect=r) for r in edl.GLOBAL_BLUR] + [e for e in self.shot["fx"] if e["kind"] == "blur"]
+        blurs = [dict(rect=r) for r in getattr(edl, "GLOBAL_BLUR", [])] + \
+                [e for e in self.shot["fx"] if e["kind"] == "blur"]
         for b in blurs:
             if b.get("src_from") is not None and ts < b["src_from"]:
                 continue
@@ -323,7 +324,7 @@ class ShotRenderer:
         return f
 
     def safe(self, t):
-        rect = edl.SAFE_REF
+        rect = getattr(edl, "SAFE_REF", None) or (0, 0, REF_W, self.wh / self.k)
         for t0, r in self.shot.get("safe", []):
             if t >= t0:
                 rect = r
@@ -542,8 +543,8 @@ def load_vo():
         end = start + d["duration"] + 0.25
         if i + 1 < len(script.VO_LINES):
             end = min(end, script.VO_LINES[i + 1]["start"] - 0.08)
-        end = min(end, script.SUBTITLE_HIDE_AFTER.get(i, 1e9), edl.DURATION)
-        rows = script.SUBTITLE_BREAKS.get(i) or [line["text"].rstrip("。，")]
+        end = min(end, getattr(script, "SUBTITLE_HIDE_AFTER", {}).get(i, 1e9), edl.DURATION)
+        rows = getattr(script, "SUBTITLE_BREAKS", {}).get(i) or [line["text"].rstrip("。，")]
         out.append(dict(start=start, end=end, rows=rows, text=line["text"]))
     return out
 
