@@ -1,6 +1,7 @@
 """Rank Kokoro speakers for the voice-over: ASR character error rate, pitch and speaking rate.
 
     python3 tools/eval_voices.py 3 57 --speed 1.3     # Mandarin female speakers
+    python3 tools/eval_voices.py 21 21 --script       # one speaker on the selected version's own copy
 Writes build/voice-eval/{report.json, sid_XX.wav}.
 """
 import argparse
@@ -40,7 +41,12 @@ def main():
     ap.add_argument("first", type=int)
     ap.add_argument("last", type=int)
     ap.add_argument("--speed", type=float, default=1.3)
+    ap.add_argument("--script", action="store_true", help="test on the VO lines of VIDEO_VERSION instead")
     a = ap.parse_args()
+    tests = TESTS
+    if a.script:
+        from config import script
+        tests = [line.get("say", line["text"]) for line in script.VO_LINES]
     out = ROOT / "build/voice-eval"
     out.mkdir(parents=True, exist_ok=True)
     tts = make_tts()
@@ -50,7 +56,7 @@ def main():
     report = []
     for sid in range(a.first, a.last + 1):
         errs, f0s, rates, clips = [], [], [], []
-        for text in TESTS:
+        for text in tests:
             au = tts.generate(text, sid=sid, speed=a.speed)
             x = trim(np.asarray(au.samples, dtype=np.float32), au.sample_rate)
             sr = au.sample_rate
@@ -62,6 +68,8 @@ def main():
             f0s.append(f0[vf])
             rates.append(sum("\u4e00" <= c <= "\u9fff" for c in text) / (len(x) / sr))
             clips.append(x)
+            if a.script and errs[-1] > 0:
+                print(f"  sid {sid}: {text} -> ASR {st.result.text}")
         f0 = np.concatenate(f0s)
         row = dict(sid=sid, cer=round(float(np.mean(errs)), 3),
                    f0_median=round(float(np.median(f0)), 1),
