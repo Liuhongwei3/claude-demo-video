@@ -1,4 +1,4 @@
-"""Contact sheet of rendered stills: python3 tools/contact.py build/v2/stills out.jpg [cols] [width]"""
+"""Contact sheet of rendered stills: python3 tools/contact.py build/production-order/v2/stills out.jpg [cols] [width]"""
 import sys, glob
 import cv2, numpy as np
 d, out = sys.argv[1], sys.argv[2]
