@@ -74,18 +74,18 @@ def _load(name):
 from style import LAYOUT as LAYOUT_DEFAULTS  # noqa: E402  house style; edl.LAYOUT overrides keys
 
 _cache = {}
+_NEEDS = dict(edl="edl", SOURCE="edl", LAYOUT="edl", script="script", TITLE="script", OUT_NAME="script")
 
 
 def __getattr__(name):
-    if name not in ("edl", "script", "SOURCE", "TITLE", "OUT_NAME", "LAYOUT"):
+    if name not in _NEEDS:
         raise AttributeError(name)
-    if not _cache:
-        edl, script = _load("edl"), _load("script")
-        _cache.update(
-            edl=edl, script=script,
-            SOURCE=ROOT / getattr(edl, "SOURCE", "source/source.mp4"),
-            TITLE=getattr(script, "TITLE", "生产工单全流程管理"),
-            OUT_NAME=getattr(script, "OUT_NAME", "production-workflow-demo"),
-            LAYOUT={**LAYOUT_DEFAULTS, **getattr(edl, "LAYOUT", {})},
-        )
+    kind = _NEEDS[name]
+    if kind not in _cache:
+        mod = _cache[kind] = _load(kind)
+        if kind == "edl":
+            _cache.update(SOURCE=ROOT / getattr(mod, "SOURCE", "source/source.mp4"),
+                          LAYOUT={**LAYOUT_DEFAULTS, **getattr(mod, "LAYOUT", {})})
+        else:
+            _cache.update(TITLE=getattr(mod, "TITLE", MODULE), OUT_NAME=getattr(mod, "OUT_NAME", MODULE))
     return _cache[name]

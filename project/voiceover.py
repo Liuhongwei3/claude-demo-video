@@ -69,7 +69,8 @@ def main():
             asr.decode_stream(st)
             heard = st.result.text
         dur = len(x) / audio.sample_rate
-        info.append({"file": path.name, "text": line["text"], "duration": round(dur, 3),
+        info.append({"file": path.name, "text": line["text"], "say": line.get("say", line["text"]),
+                     "sid": line.get("sid", VOICE_SID), "speed": line.get("speed", 1.1), "duration": round(dur, 3),
                      "sample_rate": audio.sample_rate, "asr_check": heard})
         print(f"{i}: {dur:.2f}s  {line['text']}  |  ASR: {heard}")
     (OUT / "durations.json").write_text(json.dumps(info, ensure_ascii=False, indent=2))
