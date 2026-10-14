@@ -29,10 +29,10 @@ FONT_BOLD = ("/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc", 2)
 FONT_REG = ("/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc", 2)
 
 # Palette sampled from the product UI (sidebar navy, primary blue)
-BLUE = (243, 136, 30)          # BGR of #1e88f3
-BLUE_LIGHT = (255, 190, 110)
+BLUE = tuple(L.get("accent", (243, 136, 30)))    # BGR of #1e88f3
+BLUE_LIGHT = tuple(int(c + (255 - c) * 0.45) for c in BLUE) if "accent" in L else (255, 190, 110)
 NAVY = (40, 26, 14)            # deep background
-UI_BG = (247, 246, 245)
+UI_BG = tuple(L.get("ui_bg", (247, 246, 245)))
 CARD_X_CENTER = W // 2
 CARD_RADIUS = L["card_radius"]
 

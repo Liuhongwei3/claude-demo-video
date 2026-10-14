@@ -4,6 +4,8 @@ Coordinates are in the reference space of the recording (1280 px wide, height fo
 `src` values are source seconds; every other time is seconds in the final cut.
 """
 
+import style as _style
+
 __all__ = ["kf", "hl", "sweep", "ripple", "blur", "sweep_path", "LAYOUT_V2", "MUSIC_V2", "CARD_H"]
 
 
@@ -40,21 +42,7 @@ def sweep_path(t0, step, nodes, pad=6):
             for i, (x0, y0, x1, y1) in enumerate(nodes)]
 
 
-# The v2 look: large 1040 px card, headline at the top, subtitles below, morph dissolves.
-# closing_* times / positions depend on the cut and must be set per version.
-LAYOUT_V2 = dict(
-    card_w=1040, card_cy=945, card_radius=28,
-    kicker_y=92, kicker_size=27, title_y=154, title_size=58, hook_title_size=64,
-    sub_top=1650, sub_size=44, sub_line_h=62,
-    head_fade_in=0.55, head_fade_out=0.4, sub_fade=0.22,
-    hl_fade_in=0.4, hl_fade_out=0.35,
-    morph=True, xzoom=0.035, outro_fade=0.7,
-    closing_step=0.18, closing_l1_delay=0.75, closing_l2_delay=1.2,
-    closing_chain_y=930, closing_l1_y=1080, closing_l2_y=1166,
-)
-
-# Soundtrack: 100 BPM, one bar = 2.4 s. resolve_bar should land where the closing copy appears
-# (resolve_bar * 2.4 ~= LAYOUT["closing_t"]).
-MUSIC_V2 = dict(kick_bar=2, shaker_bar=4, music_lufs=-28.0, duck_lookahead=0.12, duck_depth=0.72)
-
-CARD_H = 1300   # tallest card that fits between the headline and the subtitles with LAYOUT_V2
+# The house style (project/style.py). closing_t / resolve_bar depend on the cut and are set per version.
+LAYOUT_V2 = dict(_style.LAYOUT)
+MUSIC_V2 = dict(_style.MUSIC)
+CARD_H = _style.CAMERA["card_h_max"]
