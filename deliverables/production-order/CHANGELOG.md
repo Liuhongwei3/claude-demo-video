@@ -1,15 +1,26 @@
 # 版本记录
 
-每个版本的成片和配套文件放在 `deliverables/<版本>/`，剪辑决策表和文案放在 `project/versions/<版本>/`。旧版本不会被覆盖，可以随时用 `VIDEO_VERSION=<版本> ./project/build.sh` 重新构建。
+生产工单模块的每个版本，成片和配套文件放在 `deliverables/production-order/<版本>/`，源文件放在 `project/versions/production-order/<版本>/`。旧版本不会被覆盖，可以随时用 `VIDEO=production-order/<版本> ./project/build.sh` 重新构建。v1 是历史版本，只保留成片归档，源文件在 git 标签 `video-v1` 中。
 
 | 版本 | 成片 | 时长 | 配音 | 画面卡片 | 转场 | 主要内容 |
 |---|---|---|---|---|---|---|
+| [v3](v3/) | [`v3/production-workflow-demo.mp4`](v3/production-workflow-demo.mp4) | 49.9 s | 同 v2 | 同 v2，由编译器按「要展示的区域」自动计算 | 同 v2 | v2 用声明式 `spec.yaml` 重写，作为模板的参考样例；镜头与旁白不变 |
 | [v2](v2/) | [`v2/production-workflow-demo.mp4`](v2/production-workflow-demo.mp4) | 50.8 s | 女声（Kokoro 21 号），约 4.9 字/秒，13 句 | 宽 1040 px，高 870–1300 px | 0.45–0.6 s 形变叠化，同页同机位衔接，结尾淡出 | 16 个镜头；新增首检状态悬停、确认新增点击、切换到任务派发管理、任务详情与执行记录、点击派发任务、选择执行人 |
 | [v1](v1/) | [`v1/production-workflow-demo.mp4`](v1/production-workflow-demo.mp4) | 28.8 s | 男声（Kokoro 68 号），约 4.2 字/秒，6 句 | 宽 960 px，高 440–1000 px | 0.15–0.3 s 交叉淡化 | 12 个镜头，覆盖四大功能的最短叙事 |
 
+## 模板化 · 2026-10-14（v3）
+
+把 v2 的制作方案整理成可复用的产品宣传视频生产模板，其他模块（库存管理、质量追溯、采购管理等）共用同一套视觉语言和流程：
+
+- 视频按模块组织：`project/versions/<模块>/<版本>/`，用 `VIDEO=<模块>/<版本>` 选择。
+- v2 的版式、配色、配音、节奏和配乐参数沉淀为 `project/style.py`。
+- 新视频只需写一份 `spec.yaml`（功能描述 + 镜头清单 + 旁白），由 `project/compile_spec.py` 自动生成时间线、机位、音效、标题、收尾、配乐和隐私模糊，`tools/qa.py` 自动质检并生成交付说明。
+- Skill 改为工具无关：正本在 `skills/screen-recording-promo/`，Cursor、Claude Code 和其他 Agent 都有入口，使用方法见 [`docs/USAGE.md`](../../docs/USAGE.md)。
+- v3 是 v2 的 spec 版：句间停顿统一为 0.3 s，长字幕自动断行，总时长 49.9 s，自动质检全部通过。v2 的静帧和混音与改造前逐位一致。
+
 ## 工具链 · 2026-10-14
 
-把 v2 的制作流程整理成 Cursor Skill（`.cursor/skills/screen-recording-promo/`），新增录屏导入、原片摸底、成片自检和版本脚手架工具（见 README）。流水线改为从版本文件读取原片路径和标题，参考坐标高度跟随原片宽高比。v1、v2 成片不变：v1 混音逐位一致，v2 静帧逐位一致。
+把 v2 的制作流程整理成 Cursor Skill（现位于 `skills/screen-recording-promo/`），新增录屏导入、原片摸底、成片自检和版本脚手架工具（见 README）。流水线改为从版本文件读取原片路径和标题，参考坐标高度跟随原片宽高比。v1、v2 成片不变：v1 混音逐位一致，v2 静帧逐位一致。
 
 ## v2 · 2026-10-13
 

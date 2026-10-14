@@ -2,9 +2,9 @@
 
     python3 tools/review.py sheets [--step 0.5]       # whole cut, one frame every step -> review/sheet-NN.jpg
     python3 tools/review.py transitions                # each shot boundary, 0.1 s apart -> review/xfade-<shot>.jpg
-    python3 tools/review.py storyboard [t ...]         # one frame per shot (or given times) -> deliverables/<v>/storyboard.jpg
+    python3 tools/review.py storyboard [t ...]         # one frame per shot (or given times) -> deliverables/<module>/<version>/storyboard.jpg
 
-The video defaults to build/<version>/video.mp4 (picture only, available before muxing); pass --video
+The video defaults to build/<module>/<version>/video.mp4 (picture only, available before muxing); pass --video
 to review the delivered mp4 instead.
 """
 import argparse
@@ -71,7 +71,8 @@ def main():
     else:
         ts = args.times or [min(s["t1"] - 0.3, s["t0"] + 0.65 * (s["t1"] - s["t0"])) for s in shots]
         tiles = [label(f, f"{t:.1f}s") for f, t in zip(frames_at(video, ts, args.tile), ts)]
-        save(sheet(tiles, args.cols, gap=0), Path(args.out) if args.out else config.DELIVER / "storyboard.jpg")
+        cols = args.cols if len(tiles) > args.cols else len(tiles)
+        save(sheet(tiles, cols, gap=0), Path(args.out) if args.out else config.DELIVER / "storyboard.jpg")
 
 
 if __name__ == "__main__":

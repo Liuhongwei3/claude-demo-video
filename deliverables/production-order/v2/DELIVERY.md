@@ -11,7 +11,7 @@ v2 根据 v1 的反馈修改：加长时长、改用女声并加快语速、放�
 | `subtitles.srt` | 简体中文字幕，与旁白逐句同步（成片中已烧录同样的字幕） |
 | `shot-list.md` | 镜头清单：原片起止时间、对应功能、裁切放大、字幕旁白、敏感信息处理 |
 | `storyboard.jpg` | 成片关键帧组成的分镜缩略图 |
-| `../../project/versions/v2/` | 本版的剪辑决策表（`edl.py`）和文案（`script.py`），用 `VIDEO_VERSION=v2 ./project/build.sh` 可一键复现 |
+| `../../../project/versions/production-order/v2/` | 本版的剪辑决策表（`edl.py`）和文案（`script.py`），用 `VIDEO=production-order/v2 ./project/build.sh` 可一键复现 |
 
 ## 相对 v1 的改动
 
@@ -44,8 +44,8 @@ v2 根据 v1 的反馈修改：加长时长、改用女声并加快语速、放�
 
 1. **任务报工操作**：原片没有展开「操作 ▾」菜单或报工弹窗。成片只高亮操作列并标注「任务操作入口」，「通过操作列发起报工」由旁白讲述。**建议补录约 3 秒**。
 2. **批量派发的完整结果**：原片有勾选列，派发表单里也能「添加派发」（成片中展示了派发 1 / 派发 2），但没有点击「确定」提交，也没有派发成功的结果。**建议补录约 3 秒**。
-3. **画质**：B 站未登录状态下最高只能拿到 720P，v2 放大到 2 倍左右时，小字号略有发软。提供账号 Cookie 中的 `SESSDATA` 后，运行 `BILIBILI_SESSDATA=xxx python3 tools/fetch_bilibili.py BV1j8pq6oEqi source/` 获取 4K 原片，再运行 `VIDEO_VERSION=v2 ./project/build.sh`，即可按同一份剪辑决策表重新渲染出更清晰的版本，镜头坐标会自动适配。
-4. **配音**：使用离线开源 TTS（Kokoro v1.1-zh，Apache-2.0），自然度不如真人。正式投放前建议按 `voiceover-script.txt` 的时间码录制真人配音，覆盖 `build/v2/vo/line_00.wav … line_12.wav`，再运行 `VIDEO_VERSION=v2 python3 project/audio.py` 并重新封装，不用重新渲染画面。
+3. **画质**：B 站未登录状态下最高只能拿到 720P，v2 放大到 2 倍左右时，小字号略有发软。提供账号 Cookie 中的 `SESSDATA` 后，运行 `BILIBILI_SESSDATA=xxx python3 tools/fetch_bilibili.py BV1j8pq6oEqi source/` 获取 4K 原片，再运行 `VIDEO=production-order/v2 ./project/build.sh`，即可按同一份剪辑决策表重新渲染出更清晰的版本，镜头坐标会自动适配。
+4. **配音**：使用离线开源 TTS（Kokoro v1.1-zh，Apache-2.0），自然度不如真人。正式投放前建议按 `voiceover-script.txt` 的时间码录制真人配音，覆盖 `build/production-order/v2/vo/line_00.wav … line_12.wav`，再运行 `VIDEO=production-order/v2 python3 project/audio.py` 并重新封装，不用重新渲染画面。
 5. **品牌信息**：素材中没有 Logo 或完整产品名，结尾使用纯文字，没有虚构品牌标识。
 
 ## 素材与授权
