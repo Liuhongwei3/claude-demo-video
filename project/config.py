@@ -28,6 +28,9 @@ def _load(name):
 edl = _load("edl")
 script = _load("script")
 
+SOURCE = ROOT / getattr(edl, "SOURCE", "source/source.mp4")
+TITLE = getattr(script, "TITLE", "生产工单全流程管理")
+
 # Layout defaults reproduce v1; a version can override any key via edl.LAYOUT.
 LAYOUT = dict(
     card_w=960, card_cy=960, card_radius=26,

@@ -19,12 +19,11 @@ from PIL import Image, ImageDraw, ImageFont
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "project"))
-from config import BUILD, LAYOUT, edl, script  # noqa: E402
+from config import BUILD, LAYOUT, SOURCE, edl, script  # noqa: E402
 
-SOURCE = ROOT / "source/source.mp4"
 L = LAYOUT
 W, H, FPS = edl.OUT_W, edl.OUT_H, edl.FPS
-REF_W, REF_H = 1280, 720
+REF_W = 1280
 
 FONT_BOLD = ("/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc", 2)
 FONT_REG = ("/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc", 2)
@@ -292,7 +291,8 @@ class ShotRenderer:
         self.shot = shot
         self.src_path, (self.sw, self.sh, self.sfps) = SOURCE, src_info
         self.k = min(self.sw / REF_W, 2.0)
-        self.ww, self.wh = int(round(REF_W * self.k)), int(round(REF_H * self.k))
+        # reference space is 1280 px wide; its height follows the recording's aspect ratio
+        self.ww, self.wh = int(round(REF_W * self.k)), int(round(REF_W * self.sh / self.sw * self.k))
         srcs = [p[1] for p in shot["src"]]
         self.reader = None
         self.src_range = (min(srcs), max(srcs))

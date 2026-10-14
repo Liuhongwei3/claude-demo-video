@@ -5,7 +5,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "project"))
-from config import BUILD, DELIVER, edl, script  # noqa: E402
+from config import BUILD, DELIVER, TITLE, edl, script  # noqa: E402
 
 OUT = DELIVER
 
@@ -37,7 +37,7 @@ def main():
         f"镜头{i + 1} · {name}" for i, name in enumerate([
             "开场钩子", "工单详情与工序链路", "工序动态调整", "个人工作台与任务报工",
             "负责人任务管理与批量派发", "价值收束"])]
-    lines = ["《生产工单全流程管理》产品宣传短视频 · 旁白文案",
+    lines = [f"《{TITLE}》产品宣传短视频 · 旁白文案",
              f"总时长 {edl.DURATION:.1f} 秒 | {getattr(script, 'VOICE_DESC', '普通话男声，沉稳专业 | 语速约 4.5 字/秒')}", ""]
     for i, (line, meta, name) in enumerate(zip(script.VO_LINES, info, shots)):
         st = line["start"]
