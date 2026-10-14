@@ -4,7 +4,7 @@
     python3 tools/frame.py 107.9 --crop 190 110 1090 550       # zoomed crop (2x) of a modal
     python3 tools/frame.py 5.4 --src source/other/source.mp4 --out /tmp/probe
 
-Output: <out>/f_<t>.png (default build/<version>/probe). Read the PNG and take coordinates off the grid.
+Output: <out>/f_<t>.png (default build/<module>/<version>/probe). Read the PNG and take coordinates off the grid.
 """
 import argparse
 

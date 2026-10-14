@@ -20,7 +20,7 @@ def main():
     ap.add_argument("--cols", type=int, default=4)
     ap.add_argument("--tile", type=int, default=480, help="tile width (px)")
     ap.add_argument("--src")
-    ap.add_argument("--out", help="output jpg (default build/<version>/probe/sheet_<t0>-<t1>.jpg)")
+    ap.add_argument("--out", help="output jpg (default build/<module>/<version>/probe/sheet_<t0>-<t1>.jpg)")
     args = ap.parse_args()
 
     src = source_path(args.src)

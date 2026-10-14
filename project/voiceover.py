@@ -1,7 +1,7 @@
 """Generate the Mandarin voice-over offline with Kokoro v1.1-zh (Apache-2.0) via sherpa-onnx.
 
-Each line is synthesised separately, trimmed, and written to build/<version>/vo/line_XX.wav;
-measured durations go to build/<version>/vo/durations.json so the edit can be timed to speech.
+Each line is synthesised separately, trimmed, and written to build/<module>/<version>/vo/line_XX.wav;
+measured durations go to build/<module>/<version>/vo/durations.json so the edit can be timed to speech.
 """
 import json
 import sys

@@ -83,7 +83,7 @@ def split_subtitle(text, max_chars):
     t = text.rstrip("。，")
     if len(t) <= max_chars:
         return None
-    for marks in ("，？！；", "、"):
+    for marks in ("，？！；：", "、"):
         cands = [i + 1 for i, c in enumerate(t[:-1]) if c in marks]
         if cands:
             best = min(cands, key=lambda i: abs(i - len(t) / 2))

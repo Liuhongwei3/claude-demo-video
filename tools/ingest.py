@@ -50,7 +50,7 @@ def main():
           f"(reference space 1280x{info['ref_h']})")
     if info["w"] < 1920:
         print("note: below 1080p -- the card zooms ~2x, so UI text will look soft; get a higher-res recording if possible")
-    print(f"next: python3 tools/new_version.py <v> --from v2 --source {rel}")
+    print(f"next: python3 tools/new_video.py {args.name} --title <模块名称> --source {rel}")
 
 
 if __name__ == "__main__":

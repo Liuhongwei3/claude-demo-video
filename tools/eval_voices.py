@@ -41,7 +41,7 @@ def main():
     ap.add_argument("first", type=int)
     ap.add_argument("last", type=int)
     ap.add_argument("--speed", type=float, default=1.3)
-    ap.add_argument("--script", action="store_true", help="test on the VO lines of VIDEO_VERSION instead")
+    ap.add_argument("--script", action="store_true", help="test on the VO lines of the selected VIDEO instead")
     a = ap.parse_args()
     tests = TESTS
     if a.script:

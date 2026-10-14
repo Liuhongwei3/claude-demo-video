@@ -1,7 +1,7 @@
 """Soundtrack: procedurally synthesised BGM + UI sound cues + voice-over, ducked and loudness-normalised.
 
 Everything here is generated from code (no third-party audio), so there are no licensing questions.
-Outputs build/<version>/audio/{music,sfx,vo,mix}.wav  (48 kHz stereo).
+Outputs build/<module>/<version>/audio/{music,sfx,vo,mix}.wav  (48 kHz stereo).
 """
 import json
 import sys

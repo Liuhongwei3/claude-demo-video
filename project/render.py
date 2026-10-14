@@ -1,8 +1,8 @@
 """Programmatic renderer: source screen recording + EDL -> 1080x1920 promo video (no audio).
 
-    python3 project/render.py                      # full render -> build/<version>/video.mp4
-    python3 project/render.py --stills 3.5 7.9     # PNG previews -> build/<version>/stills/
-    VIDEO_VERSION=v1 python3 project/render.py     # re-render an earlier version
+    python3 project/render.py                      # full render -> build/<module>/<version>/video.mp4
+    python3 project/render.py --stills 3.5 7.9     # PNG previews -> build/<module>/<version>/stills/
+    VIDEO=production-order/v2 python3 project/render.py   # pick the video
 """
 import argparse
 import json

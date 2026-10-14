@@ -16,7 +16,7 @@ REF_W = 1280
 
 
 def version_paths():
-    """(SOURCE, BUILD) of the selected version (VIDEO_VERSION, default latest)."""
+    """(SOURCE, BUILD) of the selected video (VIDEO=<module>/<version>)."""
     sys.path.insert(0, str(ROOT / "project"))
     import config
     return config.SOURCE, config.BUILD
