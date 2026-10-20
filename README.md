@@ -14,11 +14,12 @@
 
 | 模块 / 版本 | 成片 | 说明 |
 |---|---|---|
+| 订单到生产计划 v1 | [`deliverables/order-to-plan/v1/`](deliverables/order-to-plan/v1/) | 移动端短视频 28.5 s：订单创建 → 明细与模板导入 → 保存 → 下达计划 → 计划管理 → 工艺卡片（[spec.yaml](project/versions/order-to-plan/v1/spec.yaml)） |
 | 生产工单 v3（最新） | [`deliverables/production-order/v3/`](deliverables/production-order/v3/) | v2 的同一套剪辑改用 spec 编写，作为模板的标准示例（[spec.yaml](project/versions/production-order/v3/spec.yaml)），49.9 s |
 | 生产工单 v2 | [`deliverables/production-order/v2/`](deliverables/production-order/v2/) | 50.8 s，女声，大卡片，形变叠化。视觉规范即来源于此版 |
 | 生产工单 v1 | [`deliverables/production-order/v1/`](deliverables/production-order/v1/) | 历史版本，只保留成片和文档（源文件见 git 标签 `video-v1`） |
 
-版本记录见 [`deliverables/production-order/CHANGELOG.md`](deliverables/production-order/CHANGELOG.md)。
+版本记录见各模块的 `CHANGELOG.md`：[生产工单](deliverables/production-order/CHANGELOG.md)、[订单到生产计划](deliverables/order-to-plan/CHANGELOG.md)。
 
 ## 快速开始
 
