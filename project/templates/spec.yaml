@@ -24,6 +24,8 @@ source_note: 原片来源、时长、分辨率     # 写进镜头清单
 # style:
 #   colors: {ui_bg: "#ffffff"}        # 产品界面背景色不是浅灰时，改成界面实际背景色
 #   voice: {sid: 21}
+#   layout: {card_cy: 830, sub_top: 1430}   # 抖音 / 视频号 / 小红书投放：字幕和卡片上移，避开底部文案与操作栏
+#   camera: {card_h_max: 1120}
 
 # 命名区域：给 within / view / to / highlight 复用。
 regions:
@@ -82,6 +84,7 @@ sections:
         # headline: 本句起换一个主标题     # 同一功能内换标题
         # pause: 0.4                      # 本句前多停一会
         # tts: 实际朗读的文字              # 语音识别听错时，改读法而不改字幕
+        # em: [功能词]                    # 字幕中用强调色突出的词（每句 1–2 个）
         shots:
           - id: S2b
             shows: 操作结果：成功提示、状态变化……
