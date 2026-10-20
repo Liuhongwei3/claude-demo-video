@@ -166,8 +166,9 @@ def font(path_idx, size):
 
 
 @lru_cache(maxsize=256)
-def text_rgba(text, size, color=(255, 255, 255), bold=True, spacing=0, shadow=0, gradient=None):
-    """Render a single line of text to a BGRA numpy patch."""
+def text_rgba(text, size, color=(255, 255, 255), bold=True, spacing=0, shadow=0, gradient=None,
+              em=(), em_color=None):
+    """Render a single line of text to a BGRA numpy patch; characters whose index is in `em` use em_color (RGB)."""
     f = font(FONT_BOLD if bold else FONT_REG, size)
     widths = [f.getlength(ch) for ch in text]
     tw = int(sum(widths) + spacing * max(0, len(text) - 1)) + 4
@@ -175,10 +176,13 @@ def text_rgba(text, size, color=(255, 255, 255), bold=True, spacing=0, shadow=0,
     th = asc + desc + 4
     pad = shadow * 3
     img = Image.new("L", (tw + 2 * pad, th + 2 * pad), 0)
-    d = ImageDraw.Draw(img)
+    em_img = Image.new("L", img.size, 0)
+    d, de = ImageDraw.Draw(img), ImageDraw.Draw(em_img)
     x = pad + 2
-    for ch, cw in zip(text, widths):
+    for i, (ch, cw) in enumerate(zip(text, widths)):
         d.text((x, pad + 2), ch, font=f, fill=255)
+        if i in em:
+            de.text((x, pad + 2), ch, font=f, fill=255)
         x += cw + spacing
     a = np.asarray(img, np.float32) / 255.0
     rgba = np.zeros(a.shape + (4,), np.float32)
@@ -188,6 +192,9 @@ def text_rgba(text, size, color=(255, 255, 255), bold=True, spacing=0, shadow=0,
         rgba[..., :3] = c0 * (1 - u) + c1 * u
     else:
         rgba[..., :3] = color[::-1]
+    if em:
+        e = (np.asarray(em_img, np.float32) / 255.0)[..., None]
+        rgba[..., :3] = rgba[..., :3] * (1 - e) + np.asarray(em_color[::-1], np.float32) * e
     rgba[..., 3] = a
     if shadow:
         sh = cv2.GaussianBlur(a, (0, 0), shadow)
@@ -545,8 +552,21 @@ def load_vo():
             end = min(end, script.VO_LINES[i + 1]["start"] - 0.08)
         end = min(end, getattr(script, "SUBTITLE_HIDE_AFTER", {}).get(i, 1e9), edl.DURATION)
         rows = getattr(script, "SUBTITLE_BREAKS", {}).get(i) or [line["text"].rstrip("。，")]
-        out.append(dict(start=start, end=end, rows=rows, text=line["text"]))
+        words = getattr(script, "SUBTITLE_EMPHASIS", {}).get(i, [])
+        out.append(dict(start=start, end=end, rows=rows, text=line["text"],
+                        em=[emphasis_index(r, words) for r in rows]))
     return out
+
+
+def emphasis_index(row, words):
+    """Character indices of `row` covered by any of `words`."""
+    idx = set()
+    for w in words:
+        k = row.find(w)
+        while w and k >= 0:
+            idx.update(range(k, k + len(w)))
+            k = row.find(w, k + len(w))
+    return tuple(sorted(idx))
 
 
 def draw_headlines(canvas, t):
@@ -575,7 +595,8 @@ def draw_subtitles(canvas, t, vo):
         if not (sub["start"] - 0.05 <= t <= sub["end"]):
             continue
         a = min(ease((t - sub["start"] + 0.05) / fd), ease((sub["end"] - t) / fd))
-        rows = [text_rgba(r, L["sub_size"], (255, 255, 255), True, 1, 2) for r in sub["rows"]]
+        rows = [text_rgba(r, L["sub_size"], (255, 255, 255), True, 1, 2, em=e, em_color=BLUE_LIGHT[::-1])
+                for r, e in zip(sub["rows"], sub["em"])]
         lh = L["sub_line_h"]
         bw = max(r.shape[1] for r in rows) + 56
         bh = lh * len(rows) + 30

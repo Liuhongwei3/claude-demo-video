@@ -476,7 +476,7 @@ def main():
         raise SpecError("closing section: `closing_lines` must have exactly two lines")
 
     V, maxc = S["voice"], S["subtitle"]["max_chars"]
-    vo_lines, breaks = [], {}
+    vo_lines, breaks, emphasis = [], {}, {}
     for i, (ln, st) in enumerate(zip(lines, starts)):
         item = dict(start=st, text=ln["text"], speed=ln["speed"])
         if ln["say"] != ln["text"]:
@@ -489,6 +489,12 @@ def main():
             br = split_subtitle(ln["text"], maxc)
         if br:
             breaks[i] = list(br)
+        em = ln["beat"].get("em") or []
+        for w in em:
+            if w not in ln["text"]:
+                warn(f"line {i + 1}: em word {w!r} is not in the subtitle")
+        if em:
+            emphasis[i] = list(em)
     n_chars = sum(sum("\u4e00" <= c <= "\u9fff" for c in ln["text"]) for ln in lines)
     rate = n_chars / sum(durs)
     sections_names = [f"镜头{ln['si'] + 1} · {section_title(ln['sec'])}" for ln in lines]
@@ -499,7 +505,7 @@ def main():
           ("VOICE_SID", V["sid"]), ("TRIM_PAD", V["trim_pad"]),
           ("VOICE_DESC", f"{V['desc']} | 语速约 {rate:.1f} 字/秒"),
           ("VO_LINES", vo_lines), ("VO_SECTIONS", sections_names), ("SUBTITLE_BREAKS", breaks),
-          ("SUBTITLE_HIDE_AFTER", {len(lines) - 1: closing_t + CLOSING_HOLD}),
+          ("SUBTITLE_EMPHASIS", emphasis), ("SUBTITLE_HIDE_AFTER", {len(lines) - 1: closing_t + CLOSING_HOLD}),
           ("HEADLINES", heads), ("CLOSING_CHAIN", chain), ("CLOSING_LINE_1", cl[0]), ("CLOSING_LINE_2", cl[1])])
 
     layout = dict(S["layout"], closing_t=closing_t,

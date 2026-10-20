@@ -81,6 +81,11 @@ def __getattr__(name):
     if name not in _NEEDS:
         raise AttributeError(name)
     kind = _NEEDS[name]
+    if name == "SOURCE" and kind not in _cache and not (DIR / "edl.py").exists() and (DIR / "spec.yaml").exists():
+        import yaml  # survey tools run before the first compile
+        src = (yaml.safe_load((DIR / "spec.yaml").read_text()) or {}).get("source")
+        if src:
+            return ROOT / src
     if kind not in _cache:
         mod = _cache[kind] = _load(kind)
         if kind == "edl":
