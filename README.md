@@ -1,83 +1,69 @@
-# 生产工单全流程管理 · 竖屏产品宣传 Demo
+# 产品宣传视频生产模板（录屏 → 9:16 竖屏）
 
-本仓库把一段真实的生产管理系统录屏（B 站 [BV1j8pq6oEqi](https://www.bilibili.com/video/BV1j8pq6oEqi/)）程序化地剪成 1080×1920 的中文竖屏宣传片，并按版本管理。
+把业务系统录屏程序化地做成 1080×1920 中文竖屏产品宣传视频。所有模块共用一套视觉语言和制作流程（生产工单、库存管理、质量追溯、采购管理等）。每次只需要提供新录屏，并编写一份 `spec.yaml`：
 
-| 版本 | 成片 | 说明 |
+- **功能描述**：每个功能点证明了什么；
+- **镜头清单**：每个镜头用原片哪一段、展示哪块区域、高亮什么、点击在哪；
+- **旁白**：每句话的文案。
+
+时间线、机位缓动、形变叠化转场、高亮动效、屏幕标题、字幕断行、收尾动画、女声配音、配乐与音效，全部按统一规范（`project/style.py`）自动生成；最后自动质检，并输出交付文档。
+
+**怎么用（Cursor、Claude Code、其他 Agent 或手动）见 [docs/USAGE.md](docs/USAGE.md)。** Agent 执行时遵循的 Skill 是 [skills/screen-recording-promo/SKILL.md](skills/screen-recording-promo/SKILL.md)。
+
+## 已有视频
+
+| 模块 / 版本 | 成片 | 说明 |
 |---|---|---|
-| v2（最新） | [`deliverables/v2/production-workflow-demo.mp4`](deliverables/v2/production-workflow-demo.mp4) | 50.8 s，女声，画面更大，形变叠化转场 |
-| v1 | [`deliverables/v1/production-workflow-demo.mp4`](deliverables/v1/production-workflow-demo.mp4) | 28.8 s，男声，首版 |
+| 生产工单 v3（最新） | [`deliverables/production-order/v3/`](deliverables/production-order/v3/) | v2 的同一套剪辑改用 spec 编写，作为模板的标准示例（[spec.yaml](project/versions/production-order/v3/spec.yaml)），49.9 s |
+| 生产工单 v2 | [`deliverables/production-order/v2/`](deliverables/production-order/v2/) | 50.8 s，女声，大卡片，形变叠化。视觉规范即来源于此版 |
+| 生产工单 v1 | [`deliverables/production-order/v1/`](deliverables/production-order/v1/) | 历史版本，只保留成片和文档（源文件见 git 标签 `video-v1`） |
 
-各版本的旁白、字幕、镜头清单和交付说明在 `deliverables/<版本>/` 下，版本差异见 [`deliverables/CHANGELOG.md`](deliverables/CHANGELOG.md)。
+版本记录见 [`deliverables/production-order/CHANGELOG.md`](deliverables/production-order/CHANGELOG.md)。
+
+## 快速开始
+
+```bash
+./project/setup.sh                                                   # 首次：ffmpeg、思源黑体、Python 依赖、离线 TTS/ASR 模型
+python3 tools/fetch_bilibili.py BV1j8pq6oEqi source/                 # 示例原片 → source/source.mp4
+VIDEO=production-order/v3 ./project/build.sh                         # 构建示例，约 3 分钟
+
+# 新模块
+python3 tools/ingest.py ~/Downloads/库存.mp4 --name inventory
+python3 tools/new_video.py inventory --title 库存管理 --source source/inventory/source.mp4
+export VIDEO=inventory/v1
+python3 tools/survey.py                                              # 摸底录屏
+# 编辑 project/versions/inventory/v1/spec.yaml
+python3 project/compile_spec.py --estimate                           # 草稿：时间线与警告
+./project/build.sh                                                   # 成片 + 文档 + 自检
+```
 
 ## 目录
 
 ```
-.cursor/skills/screen-recording-promo/   Cursor Skill：用新录屏按 v2 效果制作竖屏 Demo 的完整流程与规范
-tools/ingest.py                  导入录屏（本地文件或 B 站），统一转为 30 fps 恒定帧率 → source/<名称>/source.mp4
-tools/fetch_bilibili.py          从 B 站拉取原片（WBI 签名接口，可选 SESSDATA 获取 1080P/4K）
-tools/new_version.py             从已有版本或 _template 新建版本，并指定原片
-tools/survey.py                  原片摸底：划分稳定画面状态，输出缩略图联系表和时间表
-tools/source_sheet.py            原片某段时间的时间码联系表（可裁切）
-tools/frame.py / activity.py     查看原片帧（带参考坐标网格）、按帧差定位点击和加载时刻
-tools/review.py                  成片自检联系表（全片 / 逐转场）和分镜图 storyboard.jpg
-tools/eval_voices.py             TTS 音色评测（ASR 字错率、基频、语速），可用本版文案评测
-tools/asr_mix.py                 对混音成片逐句做 ASR，检查配音清晰度
-project/edlkit.py                编写 edl.py 用的辅助函数（kf / hl / sweep / ripple / blur）和 v2 版式预设
-project/versions/_template/      新录屏的版本骨架（edl.py、script.py、素材地图 NOTES.md）
-project/versions/<v>/script.py   该版本的文案：旁白、字幕断行、屏幕标题、收尾文案
-project/versions/<v>/edl.py      该版本的剪辑决策表：镜头、原片时间映射、虚拟镜头关键帧、
-                                 高亮/涟漪/模糊、音效点、版式（LAYOUT）、配乐参数（MUSIC）
-project/config.py                按 VIDEO_VERSION 选择版本（默认最新），决定 build/<v>/ 和 deliverables/<v>/
+skills/screen-recording-promo/   Skill 正本：流程、规则、spec 字段参考、各模块叙事建议、自检清单
+.cursor/skills/  .claude/skills/  Cursor 与 Claude Code 的 Skill 入口（指向正本）
+AGENTS.md  CLAUDE.md             给各类编码 Agent 的项目规则
+docs/USAGE.md                    使用指南
+
+project/style.py                 统一视觉规范：版式、配色、镜头节奏、配音、配乐
+project/templates/spec.yaml      新模块的 spec 骨架（全部字段带注释）；NOTES.md 为素材地图模板
+project/compile_spec.py          spec.yaml → edl.py + script.py（自动排时间线）+ shot-list.md
+project/versions/<模块>/<版本>/   spec.yaml（手写）、NOTES.md、edl.py / script.py（生成）
+project/build.sh                 一键构建：编译 → 配音 → 配乐 → 渲染 → 字幕 → 封装 → 分镜 → 质检
 project/voiceover.py             离线中文 TTS（Kokoro v1.1-zh）+ ASR 自检
-project/audio.py                 合成背景音乐与音效，配音压低音乐、响度标准化
-project/render.py                逐帧渲染：解码 → 裁切缩放 → 卡片/转场/动效/字幕 → H.264
-project/subtitles.py             生成 SRT 与旁白文案
-project/build.sh                 一键构建
-deliverables/<v>/                各版本交付物
+project/audio.py                 合成配乐与音效，配音时压低音乐，响度标准化
+project/render.py                逐帧渲染：解码 → 虚拟镜头裁切放大 → 卡片 / 转场 / 动效 / 字幕 → H.264
+project/subtitles.py             SRT 与旁白文案
+project/config.py                VIDEO=<模块>/<版本> 选择视频
+
+tools/ingest.py                  导入录屏（本地或 B 站），转为 30 fps 恒定帧率
+tools/new_video.py               新建模块或下一个版本
+tools/survey.py                  录屏摸底：稳定画面状态 + 缩略图，标记可疑加载
+tools/source_sheet.py            原片某段时间的时间码联系表
+tools/frame.py / activity.py     带坐标网格的单帧；按帧差定位点击和加载
+tools/review.py                  成片联系表（全片 / 逐转场）与分镜图
+tools/qa.py                      自动质检，生成 qa-report.md 与 DELIVERY.md
+tools/eval_voices.py / asr_mix.py  音色评测；混音逐句 ASR
+
+deliverables/<模块>/<版本>/       成片、字幕、旁白、镜头清单、分镜、质检报告、交付说明
 ```
-
-## 环境准备
-
-```bash
-./project/setup.sh                                   # ffmpeg、字体、Python 依赖、离线 TTS/ASR 模型
-python3 tools/fetch_bilibili.py BV1j8pq6oEqi source/ # 生成 source/source.mp4（未登录为 720P）
-```
-
-如需 4K 或 1080P 原片，可以带上自己账号的 Cookie。原片会被替换为高清版本，所有镜头坐标自动适配：
-
-```bash
-BILIBILI_SESSDATA=xxxx python3 tools/fetch_bilibili.py BV1j8pq6oEqi source/
-```
-
-## 构建
-
-```bash
-./project/build.sh                          # 构建最新版本（v2），约 3.5 分钟
-VIDEO_VERSION=v1 ./project/build.sh         # 重新构建旧版本
-VIDEO_VERSION=v2 python3 project/render.py --stills 5.5 12.9   # 只渲染几张静帧到 build/v2/stills/
-```
-
-## 新建一个版本
-
-```bash
-python3 tools/new_version.py v3 --from v2       # 同一段录屏改剪辑：复制 v2，在副本上修改 edl.py / script.py
-./project/build.sh                              # 自动构建最新的 v3，输出到 deliverables/v3/
-```
-
-## 用新录屏制作同样效果的视频
-
-完整流程、规则和踩坑记录写在 Skill [`.cursor/skills/screen-recording-promo/SKILL.md`](.cursor/skills/screen-recording-promo/SKILL.md) 中。在 Cursor 里提供录屏并说明要做竖屏 Demo，Agent 会按这个 Skill 执行。手动操作的骨架如下：
-
-```bash
-python3 tools/ingest.py ~/录屏.mp4 --name order-flow                         # 或 B 站 BV 号
-python3 tools/new_version.py v3 --from _template --source source/order-flow/source.mp4
-python3 tools/survey.py                                                    # 摸底，填写 project/versions/v3/NOTES.md
-# 编写 script.py → python3 project/voiceover.py → 按配音时长编写 edl.py
-python3 project/render.py --stills 3.5 8.0                                 # 静帧迭代
-./project/build.sh && python3 tools/review.py sheets && python3 tools/asr_mix.py
-```
-
-- 改文案或字幕：编辑 `script.py`。
-- 改镜头、构图或节奏：编辑 `edl.py`。坐标统一使用 1280 px 宽的参考坐标（16:9 原片即 1280×720）；`s` 是放大倍数，`h` / `w` 是卡片尺寸。
-- 改版式：设置 `edl.py` 里的 `LAYOUT`（卡片尺寸、标题和字幕位置、渐变时长、`morph` 转场等），未设置的项沿用 v1 的默认值（见 `project/config.py`）。
-- 换真人配音：覆盖 `build/<v>/vo/line_XX.wav`，运行 `VIDEO_VERSION=<v> python3 project/audio.py` 和 `project/subtitles.py`，再执行 `build.sh` 末尾的 ffmpeg 封装命令即可，不需要重新渲染画面。

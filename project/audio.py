@@ -1,7 +1,7 @@
 """Soundtrack: procedurally synthesised BGM + UI sound cues + voice-over, ducked and loudness-normalised.
 
 Everything here is generated from code (no third-party audio), so there are no licensing questions.
-Outputs build/<version>/audio/{music,sfx,vo,mix}.wav  (48 kHz stereo).
+Outputs build/<module>/<version>/audio/{music,sfx,vo,mix}.wav  (48 kHz stereo).
 """
 import json
 import sys
@@ -14,7 +14,8 @@ from scipy.signal import butter, fftconvolve, resample_poly, sosfilt
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "project"))
-from config import BUILD, edl, script  # noqa: E402
+from config import BUILD, edl, script
+import style  # noqa: E402
 
 SR = 48000
 DUR = edl.DURATION + 0.4
@@ -28,7 +29,7 @@ BEAT = 60 / BPM
 BAR = 4 * BEAT  # 2.4 s
 
 # Bar on which the progression resolves to Cmaj9 under the closing line (v1: bar 11 = 26.4 s).
-MUSIC = dict(resolve_bar=11, kick_bar=2, shaker_bar=4, music_lufs=-27.0, duck_lookahead=0.0, duck_depth=0.65)
+MUSIC = dict(resolve_bar=11, **style.MUSIC)
 MUSIC.update(getattr(edl, "MUSIC", {}))
 R = MUSIC["resolve_bar"]
 T_LIFT = (R - 0.5) * BAR

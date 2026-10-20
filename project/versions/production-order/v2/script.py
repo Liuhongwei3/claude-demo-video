@@ -1,5 +1,8 @@
 """Copy deck v2: longer cut (~45 s), female voice, faster delivery."""
 
+TITLE = "生产工单全流程管理"
+OUT_NAME = "production-workflow-demo"
+
 VOICE_SID = 21  # Kokoro v1.1-zh female voice, see tools/eval_voices.py
 TRIM_PAD = 0.06  # keep the soft tail of sentence-final syllables
 VOICE_DESC = "普通话女声，干练清晰 | 语速约 4.9 字/秒（v1 约 4.2 字/秒）"

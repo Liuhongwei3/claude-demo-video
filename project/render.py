@@ -1,8 +1,8 @@
 """Programmatic renderer: source screen recording + EDL -> 1080x1920 promo video (no audio).
 
-    python3 project/render.py                      # full render -> build/<version>/video.mp4
-    python3 project/render.py --stills 3.5 7.9     # PNG previews -> build/<version>/stills/
-    VIDEO_VERSION=v1 python3 project/render.py     # re-render an earlier version
+    python3 project/render.py                      # full render -> build/<module>/<version>/video.mp4
+    python3 project/render.py --stills 3.5 7.9     # PNG previews -> build/<module>/<version>/stills/
+    VIDEO=production-order/v2 python3 project/render.py   # pick the video
 """
 import argparse
 import json
@@ -29,10 +29,10 @@ FONT_BOLD = ("/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc", 2)
 FONT_REG = ("/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc", 2)
 
 # Palette sampled from the product UI (sidebar navy, primary blue)
-BLUE = (243, 136, 30)          # BGR of #1e88f3
-BLUE_LIGHT = (255, 190, 110)
+BLUE = tuple(L.get("accent", (243, 136, 30)))    # BGR of #1e88f3
+BLUE_LIGHT = tuple(int(c + (255 - c) * 0.45) for c in BLUE) if "accent" in L else (255, 190, 110)
 NAVY = (40, 26, 14)            # deep background
-UI_BG = (247, 246, 245)
+UI_BG = tuple(L.get("ui_bg", (247, 246, 245)))
 CARD_X_CENTER = W // 2
 CARD_RADIUS = L["card_radius"]
 
